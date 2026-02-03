@@ -255,7 +255,7 @@ async function addWorkerlessConfigs(configs: Config[]) {
 }
 
 export async function getXrCustomConfigs(isFragment: boolean): Promise<Response> {
-    const { outProxy, ports } = globalThis.settings;
+    const { outProxy, ports, cleanIPs, proxyIPs } = globalThis.settings;
     const chainProxy = outProxy ? buildChainOutbound() : undefined;
 
     const Addresses = await getConfigAddresses(isFragment);
@@ -268,10 +268,44 @@ export async function getXrCustomConfigs(isFragment: boolean): Promise<Response>
     const fragment = isFragment ? [buildFreedomOutbound(true, false, 'fragment')] : [];
     let index = 1;
 
+    // Process Clean IP rows (each row = one config per protocol/port)
     for (const protocol of protocols) {
         let protocolIndex = 1;
         for (const port of totalPorts) {
+            // Iterate through rows (indices) instead of addresses
+            for (let rowIndex = 0; rowIndex < cleanIPs.length; rowIndex++) {
+                const addr = cleanIPs[rowIndex];
+                const proxyIP = proxyIPs[rowIndex];
+
+                if (!addr || !proxyIP) continue;
+
+                const outbound = buildWebsocketOutbound(protocol, addr, port, isFragment, proxyIP);
+                const outbounds = [outbound, ...fragment];
+
+                const proxy = modifyOutbound(outbound, `proxy-${index}`);
+                proxies.push(proxy);
+
+                const remark = generateRemark(protocolIndex, port, addr, protocol, isFragment, false, rowIndex);
+                const config = await buildConfig(remark, outbounds, false, false, false, false, false, [addr]);
+                configs.push(config);
+
+                if (chainProxy) {
+                    const remark = generateRemark(protocolIndex, port, addr, protocol, isFragment, true, rowIndex);
+                    const chainConfig = await buildConfig(remark, [chainProxy, ...outbounds], false, true, false, false, false, [addr]);
+                    configs.push(chainConfig);
+
+                    const chain = modifyOutbound(chainProxy, `chain-${index}`, `proxy-${index}`);
+                    chains.push(chain);
+                }
+
+                protocolIndex++;
+                index++;
+            }
+
+            // Process non-Clean IP addresses (hostname, DNS results, etc.)
             for (const addr of Addresses) {
+                if (cleanIPs.includes(addr)) continue; // Skip, already processed above
+
                 const outbound = buildWebsocketOutbound(protocol, addr, port, isFragment);
                 const outbounds = [outbound, ...fragment];
 

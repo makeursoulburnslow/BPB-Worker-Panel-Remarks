@@ -75,7 +75,7 @@ async function buildConfig(
 }
 
 export async function getClNormalConfig(): Promise<Response> {
-    const { outProxy, ports } = globalThis.settings;
+    const { outProxy, ports, cleanIPs, proxyIPs } = globalThis.settings;
     const chainProxy = outProxy ? buildChainOutbound() : undefined;
     const isChain = !!chainProxy;
 
@@ -90,7 +90,40 @@ export async function getClNormalConfig(): Promise<Response> {
     protocols.forEach(protocol => {
         let protocolIndex = 1;
         ports.forEach(port => {
+            // Process Clean IP rows (each row = one config per protocol/port)
+            for (let rowIndex = 0; rowIndex < cleanIPs.length; rowIndex++) {
+                const addr = cleanIPs[rowIndex];
+                const proxyIP = proxyIPs[rowIndex];
+
+                if (!addr || !proxyIP) continue;
+
+                const tag = generateRemark(protocolIndex, port, addr, protocol, false, false, rowIndex);
+                const outbound = buildWebsocketOutbound(protocol, tag, addr, port, proxyIP);
+
+                if (outbound) {
+                    proxyTags.push(tag);
+                    selectorTags.push(tag);
+                    outbounds.push(outbound);
+
+                    if (isChain) {
+                        const chainTag = generateRemark(protocolIndex, port, addr, protocol, false, true, rowIndex);
+                        let chain = structuredClone(chainProxy);
+                        chain['name'] = chainTag;
+                        chain['dialer-proxy'] = tag;
+                        outbounds.push(chain);
+
+                        chainTags.push(chainTag);
+                        selectorTags.push(chainTag);
+                    }
+
+                    protocolIndex++;
+                }
+            }
+
+            // Process non-Clean IP addresses (hostname, DNS results, etc.)
             Addresses.forEach(addr => {
+                if (cleanIPs.includes(addr)) return; // Skip, already processed above
+
                 const tag = generateRemark(protocolIndex, port, addr, protocol, false, false);
                 const outbound = buildWebsocketOutbound(protocol, tag, addr, port);
 

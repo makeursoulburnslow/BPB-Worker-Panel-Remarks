@@ -76,6 +76,7 @@ export async function updateDataset(request: Request, env: Env): Promise<Setting
             ["outProxy"],
             ["outProxyParams", "outProxy", extractProxyParams],
             ["cleanIPs"],
+            ["cleanIPRemarks"],
             ["customCdnAddrs"],
             ["customCdnHost"],
             ["customCdnSni"],

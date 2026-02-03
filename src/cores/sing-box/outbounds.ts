@@ -54,7 +54,8 @@ export function buildWebsocketOutbound(
     remark: string,
     address: string,
     port: number,
-    isFragment: boolean
+    isFragment: boolean,
+    proxyIPOverride?: string
 ): VlessOutbound | TrojanOutbound {
     const {
         dict: { _VL_ },
@@ -63,7 +64,7 @@ export function buildWebsocketOutbound(
     } = globalThis;
 
     const { host, sni, allowInsecure } = selectSniHost(address);
-    const transport = buildTransport("ws", "none", generateWsPath(protocol), host, undefined, 2560);
+    const transport = buildTransport("ws", "none", generateWsPath(protocol, proxyIPOverride), host, undefined, 2560);
     const tls = isHttps(port)
         ? buildTLS(
             "tls",

@@ -76,7 +76,7 @@ async function buildConfig(
 }
 
 export async function getSbCustomConfig(isFragment: boolean): Promise<Response> {
-    const { outProxy, ports } = globalThis.settings;
+    const { outProxy, ports, cleanIPs, proxyIPs } = globalThis.settings;
     const chainProxy = outProxy ? buildChainOutbound() : undefined;
     const isChain = !!chainProxy;
 
@@ -92,7 +92,38 @@ export async function getSbCustomConfig(isFragment: boolean): Promise<Response> 
     protocols.forEach(protocol => {
         let protocolIndex = 1;
         totalPorts.forEach(port => {
+            // Process Clean IP rows (each row = one config per protocol/port)
+            for (let rowIndex = 0; rowIndex < cleanIPs.length; rowIndex++) {
+                const addr = cleanIPs[rowIndex];
+                const proxyIP = proxyIPs[rowIndex];
+
+                if (!addr || !proxyIP) continue;
+
+                const tag = generateRemark(protocolIndex, port, addr, protocol, isFragment, false, rowIndex);
+                const outbound = buildWebsocketOutbound(protocol, tag, addr, port, isFragment, proxyIP);
+
+                outbounds.push(outbound);
+                proxyTags.push(tag);
+                selectorTags.push(tag);
+
+                if (isChain) {
+                    const chainTag = generateRemark(protocolIndex, port, addr, protocol, isFragment, true, rowIndex);
+                    const chain = structuredClone(chainProxy);
+                    chain.tag = chainTag;
+                    chain.detour = tag;
+                    outbounds.push(chain);
+
+                    chainTags.push(chainTag);
+                    selectorTags.push(chainTag);
+                }
+
+                protocolIndex++;
+            }
+
+            // Process non-Clean IP addresses (hostname, DNS results, etc.)
             Addresses.forEach(addr => {
+                if (cleanIPs.includes(addr)) return; // Skip, already processed above
+
                 const tag = generateRemark(protocolIndex, port, addr, protocol, isFragment, false);
                 const outbound = buildWebsocketOutbound(protocol, tag, addr, port, isFragment);
 

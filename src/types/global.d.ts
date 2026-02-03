@@ -79,6 +79,7 @@ declare global {
         outProxy: string;
         outProxyParams: any;
         cleanIPs: string[];
+        cleanIPRemarks: string[];
         customCdnAddrs: string[];
         customCdnHost: string;
         customCdnSni: string;

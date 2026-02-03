@@ -71,20 +71,28 @@ export function generateRemark(
     address: string,
     protocol: string,
     isFragment: boolean,
-    isChain: boolean
+    isChain: boolean,
+    cleanRowIndex?: number
 ): string {
     const {
-        settings: { cleanIPs, customCdnAddrs },
+        settings: { cleanIPs, cleanIPRemarks, customCdnAddrs },
         dict: { _VL_, _VL_CAP_, _TR_CAP_ }
     } = globalThis;
 
     const isCustomAddr = customCdnAddrs.includes(address);
     const configType = isCustomAddr ? ' C' : isFragment ? ' F' : '';
     const chainSign = isChain ? '🔗 ' : '';
-    const protoSign = protocol === _VL_ ? _VL_CAP_ : _TR_CAP_;
+    let protoSign = protocol === _VL_ ? _VL_CAP_ : _TR_CAP_;
     let addressType;
 
-    cleanIPs.includes(address)
+    // Use provided row index if available, otherwise fall back to indexOf
+    const cleanIndex = cleanRowIndex !== undefined ? cleanRowIndex : cleanIPs.indexOf(address);
+
+    if (cleanIndex !== -1 && cleanIPRemarks?.[cleanIndex]) {
+        protoSign = cleanIPRemarks[cleanIndex];
+    }
+
+    cleanIndex !== -1 && cleanIndex < cleanIPs.length && cleanIPs[cleanIndex] === address
         ? addressType = 'Clean IP'
         : addressType = isDomain(address) ? 'Domain' : isIPv4(address) ? 'IPv4' : isIPv6(address) ? 'IPv6' : '';
 
@@ -113,17 +121,25 @@ export function getRandomString(lengthMin: number, lengthMax: number): string {
     return result;
 }
 
-export function generateWsPath(protocol: string): string {
+export function generateWsPath(protocol: string, proxyIPOverride?: string): string {
     const {
         settings: { proxyIPMode, proxyIPs, prefixes },
         dict: { _VL_ }
     } = globalThis;
 
+    let mode = proxyIPMode;
+    let panelIPs: string[] = proxyIPMode === 'proxyip' ? proxyIPs : prefixes;
+
+    if (proxyIPOverride) {
+        mode = "proxyip";
+        panelIPs = [proxyIPOverride];
+    }
+
     const config = {
         junk: getRandomString(8, 16),
         protocol: protocol === _VL_ ? "vl" : "tr",
-        mode: proxyIPMode,
-        panelIPs: proxyIPMode === 'proxyip' ? proxyIPs : prefixes
+        mode,
+        panelIPs
     };
 
     return `/${btoa(JSON.stringify(config))}`;

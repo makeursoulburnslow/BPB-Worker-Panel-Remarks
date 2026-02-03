@@ -118,7 +118,8 @@ export function buildWebsocketOutbound(
     protocol: string,
     address: string,
     port: number,
-    isFragment: boolean
+    isFragment: boolean,
+    proxyIPOverride?: string
 ): Outbound {
     const {
         settings: {
@@ -143,7 +144,7 @@ export function buildWebsocketOutbound(
 
     const streamSettings: StreamSettings = {
         network: "ws",
-        ...buildTransport("ws", "none", `${generateWsPath(protocol)}?ed=2560`, host),
+        ...buildTransport("ws", "none", `${generateWsPath(protocol, proxyIPOverride)}?ed=2560`, host),
         security: isTLS ? "tls" : "none",
         tlsSettings,
         sockopt: isFragment
