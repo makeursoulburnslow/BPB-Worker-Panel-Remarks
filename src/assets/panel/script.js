@@ -1,4 +1,6 @@
 localStorage.getItem('darkMode') === 'enabled' && document.body.classList.add('dark-mode');
+const CONFIG_NAME_EMOJIS = ['🔥', '🌶', '🪬', '🍕', '🫧', '🍓'];
+const configNameEmoji = CONFIG_NAME_EMOJIS[Math.floor(Math.random() * CONFIG_NAME_EMOJIS.length)];
 const form = document.getElementById("configForm");
 const [
     selectElements,
@@ -79,98 +81,125 @@ function initiatePanel(proxySettings) {
     fetchIPInfo();
 }
 
-function renderCleanProxyRows(proxySettings) {
+let cleanProxyRowCount = 0;
+
+function addCleanProxyRow(remark = '', cleanIPs = '', proxyIPs = '') {
     const container = document.getElementById('clean-proxy-rows');
-    if (!container) return;
-
-    container.innerHTML = '';
-
-    const { cleanIPs = [], proxyIPs = [], cleanIPRemarks = [] } = proxySettings;
-    const maxLen = Math.max(cleanIPs.length, proxyIPs.length, cleanIPRemarks.length);
-
-    if (!maxLen) {
-        addCleanProxyRow(false);
-        return;
-    }
-
-    for (let i = 0; i < maxLen; i++) {
-        addCleanProxyRow(
-            false,
-            cleanIPRemarks[i] || '',
-            cleanIPs[i] || '',
-            proxyIPs[i] || ''
-        );
-    }
-}
-
-function addCleanProxyRow(isManual, remark = '', cleanIP = '', proxyIP = '') {
-    const container = document.getElementById('clean-proxy-rows');
-    if (!container) return;
-
-    const index = container.children.length + 1;
-
-    const row = document.createElement('div');
-    row.className = 'inner-container clean-proxy-row';
-
-    row.innerHTML = `
-        <div class="section" style="margin:0;">
+    const rowId = `clean-proxy-row-${cleanProxyRowCount++}`;
+    
+    const rowHtml = `
+        <div class="clean-proxy-row" id="${rowId}" style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; border-radius: 5px;">
             <div class="form-control">
-                <label>📝 Remark ${index}</label>
-                <div>
-                    <input type="text" name="cleanIPRemarks" value="${remark}">
-                </div>
-            </div>
-            <div class="form-control">
-                <label>✨ Clean IP / Domain</label>
-                <div>
-                    <input type="text" name="cleanIPs" value="${cleanIP}">
-                </div>
-            </div>
-            <div class="form-control">
-                <label>📍 Proxy IP</label>
-                <div>
-                    <input type="text" name="proxyIPs" value="${proxyIP}">
-                </div>
-            </div>
-            <div class="form-control">
-                <label>&nbsp;</label>
-                <div>
-                    <button type="button" class="delete-noise">
+                <label for="remark-${rowId}">📝 Remark</label>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input type="text" id="remark-${rowId}" name="remark-${rowId}" placeholder="e.g. US" value="${remark}">
+                    <button type="button" class="button" style="background: #dc3545;" onclick="removeCleanProxyRow('${rowId}')">
                         <span class="material-symbols-rounded">delete</span>
                     </button>
                 </div>
             </div>
+            <div class="form-control">
+                <label for="cleanIPs-${rowId}">✨ Clean IP / Domain</label>
+                <div>
+                    <textarea id="cleanIPs-${rowId}" name="cleanIPs-${rowId}" rows="3" placeholder="One IP or domain per line">${cleanIPs}</textarea>
+                </div>
+            </div>
+            <div class="form-control">
+                <label for="proxyIPs-${rowId}">📍 Proxy IP</label>
+                <div>
+                    <textarea id="proxyIPs-${rowId}" name="proxyIPs-${rowId}" rows="3" placeholder="One proxy IP per line">${proxyIPs}</textarea>
+                </div>
+            </div>
         </div>
     `;
-
-    row.querySelector(".delete-noise").addEventListener('click', deleteCleanProxyRow);
-    row.querySelectorAll('input').forEach(input => {
-        input.addEventListener('input', enableApplyButton);
+    
+    container.insertAdjacentHTML('beforeend', rowHtml);
+    
+    // Add auto-resize functionality to new textareas
+    const newRow = document.getElementById(rowId);
+    const textareas = newRow.querySelectorAll('textarea');
+    textareas.forEach(textarea => {
+        textarea.addEventListener('input', function () {
+            this.style.height = 'auto';
+            this.style.height = `${this.scrollHeight}px`;
+        });
     });
-
-    container.appendChild(row);
-    if (isManual) enableApplyButton();
+    
+    return rowId;
 }
 
-function deleteCleanProxyRow(event) {
-    const container = document.getElementById('clean-proxy-rows');
-    if (!container) return;
+function removeCleanProxyRow(rowId) {
+    const row = document.getElementById(rowId);
+    if (row) {
+        row.remove();
+    }
+}
 
-    const rows = container.querySelectorAll('.clean-proxy-row');
-    if (rows.length === 1) {
-        rows[0].querySelectorAll('input').forEach(input => input.value = '');
-        enableApplyButton();
+function getAllCleanProxyRows() {
+    const rows = document.querySelectorAll('.clean-proxy-row');
+    return Array.from(rows).map(row => {
+        const rowId = row.id;
+        const remark = document.getElementById(`remark-${rowId}`)?.value?.trim() || '';
+        const cleanIPs = document.getElementById(`cleanIPs-${rowId}`)?.value?.split('\n')
+            .map(val => val.trim()).filter(Boolean) || [];
+        const proxyIPs = document.getElementById(`proxyIPs-${rowId}`)?.value?.split('\n')
+            .map(val => val.trim()).filter(Boolean) || [];
+        
+        return { rowId, remark, cleanIPs, proxyIPs };
+    });
+}
+
+function renderCleanProxyRows(proxySettings) {
+    const { cleanIPRemarks = [], cleanIPs = [], proxyIPs = [] } = proxySettings;
+    const container = document.getElementById('clean-proxy-rows');
+    
+    // Clear existing rows
+    container.innerHTML = '';
+    cleanProxyRowCount = 0;
+    
+    if (!cleanIPRemarks.length && !cleanIPs.length && !proxyIPs.length) {
+        // Add one empty row by default
+        addCleanProxyRow();
         return;
     }
-
-    const confirmReset = confirm(
-        '⚠️ This will delete the Clean IP / Proxy row.\n\n' +
-        '❓ Are you sure?'
-    );
-
-    if (!confirmReset) return;
-    event.target.closest('.clean-proxy-row').remove();
-    enableApplyButton();
+    
+    // Group by remarks to reconstruct rows
+    const rowsMap = new Map();
+    
+    cleanIPRemarks.forEach((remark, index) => {
+        const cleanIP = cleanIPs[index];
+        const proxyIP = proxyIPs[index];
+        
+        if (!cleanIP || !proxyIP) return;
+        
+        // Extract base remark and suffix
+        const match = remark.match(/^(.*?)(?:\s+(\d+)\.(\d+))?$/);
+        const baseRemark = match ? match[1].trim() : remark;
+        const cleanRow = match ? parseInt(match[2]) - 1 : 0;
+        const proxyRow = match ? parseInt(match[3]) - 1 : 0;
+        
+        if (!rowsMap.has(baseRemark)) {
+            rowsMap.set(baseRemark, { cleanIPs: new Set(), proxyIPs: new Set() });
+        }
+        
+        const row = rowsMap.get(baseRemark);
+        row.cleanIPs.add(cleanIP);
+        row.proxyIPs.add(proxyIP);
+    });
+    
+    // Create rows from grouped data
+    rowsMap.forEach((data, remark) => {
+        addCleanProxyRow(
+            remark,
+            Array.from(data.cleanIPs).join('\n'),
+            Array.from(data.proxyIPs).join('\n')
+        );
+    });
+    
+    // If no rows were created, add an empty one
+    if (rowsMap.size === 0) {
+        addCleanProxyRow();
+    }
 }
 
 function populatePanel(proxySettings) {
@@ -320,7 +349,7 @@ function generateSubUrl(path, app, tag, singboxType) {
     app && url.searchParams.append('app', app);
 
     if (tag) {
-        url.hash = `💦 BPB ${tag}`;
+        url.hash = `${configNameEmoji} BPB ${tag}`;
     }
 
     return singboxType
@@ -876,38 +905,28 @@ function validateWarpEndpoints() {
 }
 
 function validateCleanProxyRows() {
-    const configForm = document.getElementById('configForm');
-    const formData = new FormData(configForm);
-
-    const remarks = formData.getAll('cleanIPRemarks').map(value => value.toString().trim());
-    const cleanIPs = formData.getAll('cleanIPs').map(value => value.toString().trim());
-    const proxyIPs = formData.getAll('proxyIPs').map(value => value.toString().trim());
-
-    const maxLen = Math.max(remarks.length, cleanIPs.length, proxyIPs.length);
-    const errors = [];
-
-    for (let i = 0; i < maxLen; i++) {
-        const remark = remarks[i] || '';
-        const clean = cleanIPs[i] || '';
-        const proxy = proxyIPs[i] || '';
-
-        if (!remark && !clean && !proxy) continue;
-
-        if (!clean || !proxy) {
-            errors.push(`Row ${i + 1}: Clean IP and Proxy IP must both be filled.`);
-            continue;
+    const rows = getAllCleanProxyRows();
+    
+    // Check if at least one row has content
+    const hasContent = rows.some(row => row.cleanIPs.length > 0 || row.proxyIPs.length > 0);
+    
+    if (!hasContent) {
+        return true; // Allow empty form
+    }
+    
+    // Validate each row that has content
+    for (const row of rows) {
+        if (row.cleanIPs.length === 0 && row.proxyIPs.length > 0) {
+            alert(`⛔ Row with remark "${row.remark || 'unnamed'}" has Proxy IPs but no Clean IPs.`);
+            return false;
+        }
+        
+        if (row.proxyIPs.length === 0 && row.cleanIPs.length > 0) {
+            alert(`⛔ Row with remark "${row.remark || 'unnamed'}" has Clean IPs but no Proxy IPs.`);
+            return false;
         }
     }
-
-    if (errors.length) {
-        alert(
-            '⛔ Invalid Clean IP / Proxy pairs.\n\n' +
-            errors.map(err => `⚠️ ${err}`).join('\n')
-        );
-
-        return false;
-    }
-
+    
     return true;
 }
 
@@ -1163,26 +1182,28 @@ function validateSettings() {
         form[key] = value?.split('\n').map(val => val.trim()).filter(Boolean) || [];
     });
 
-    const cleanRemarks = formData.getAll('cleanIPRemarks').map(value => value.toString().trim());
-    const cleanIPs = formData.getAll('cleanIPs').map(value => value.toString().trim());
-    const proxyIPs = formData.getAll('proxyIPs').map(value => value.toString().trim());
-
-    const maxLen = Math.max(cleanRemarks.length, cleanIPs.length, proxyIPs.length);
+    const rows = getAllCleanProxyRows();
+    
     const finalRemarks = [];
     const finalCleanIPs = [];
     const finalProxyIPs = [];
 
-    for (let i = 0; i < maxLen; i++) {
-        const remark = cleanRemarks[i] || '';
-        const clean = cleanIPs[i] || '';
-        const proxy = proxyIPs[i] || '';
-
-        if (!remark && !clean && !proxy) continue;
-
-        finalRemarks.push(remark);
-        finalCleanIPs.push(clean);
-        finalProxyIPs.push(proxy);
-    }
+    // Process each row and create combinations
+    rows.forEach((row, rowIndex) => {
+        if (row.cleanIPs.length === 0 && row.proxyIPs.length === 0) {
+            return; // Skip empty rows
+        }
+        
+        // Create combinations for this row
+        for (let i = 0; i < row.cleanIPs.length; i++) {
+            for (let j = 0; j < row.proxyIPs.length; j++) {
+                const suffix = `${i + 1}.${j + 1}`;
+                finalRemarks.push(row.remark ? `${row.remark} ${suffix}` : suffix);
+                finalCleanIPs.push(row.cleanIPs[i]);
+                finalProxyIPs.push(row.proxyIPs[j]);
+            }
+        }
+    });
 
     form.cleanIPRemarks = finalRemarks;
     form.cleanIPs = finalCleanIPs;

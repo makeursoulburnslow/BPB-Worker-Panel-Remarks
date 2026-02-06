@@ -3,7 +3,7 @@ import { buildDNS } from './dns';
 import { buildRoutingRules, buildRuleProviders } from './routing';
 import { buildChainOutbound, buildUrlTest, buildWarpOutbound, buildWebsocketOutbound } from './outbounds';
 import type { WireguardOutbound, Config, Outbound } from 'types/clash';
-import { getConfigAddresses, generateRemark, getProtocols } from '@utils';
+import { getConfigAddresses, generateRemark, getProtocols, configNameEmoji } from '@utils';
 import { sniffer, tun } from './inbounds';
 
 async function buildConfig(
@@ -65,11 +65,11 @@ async function buildConfig(
         }
     };
 
-    const name = isWarp ? `💦 Warp ${isPro ? "Pro " : ""}- Best Ping 🚀` : "💦 Best Ping 🚀";
+    const name = isWarp ? `${configNameEmoji} Warp ${isPro ? "Pro " : ""}- Best Ping 🚀` : `${configNameEmoji} Best Ping 🚀`;
     const mainUrlTest = buildUrlTest(name, proxyTags, isWarp);
     config["proxy-groups"].push(mainUrlTest);
-    if (isWarp) config["proxy-groups"].push(buildUrlTest(`💦 WoW ${isPro ? "Pro " : ""}- Best Ping 🚀`, chainTags, isWarp));
-    if (isChain) config["proxy-groups"].push(buildUrlTest("💦 🔗 Best Ping 🚀", chainTags, isWarp));
+    if (isWarp) config["proxy-groups"].push(buildUrlTest(`${configNameEmoji} WoW ${isPro ? "Pro " : ""}- Best Ping 🚀`, chainTags, isWarp));
+    if (isChain) config["proxy-groups"].push(buildUrlTest(`${configNameEmoji} 🔗 Best Ping 🚀`, chainTags, isWarp));
 
     return config;
 }
@@ -85,7 +85,7 @@ export async function getClNormalConfig(): Promise<Response> {
 
     const Addresses = await getConfigAddresses(false);
     const protocols = getProtocols();
-    const selectorTags = ["💦 Best Ping 🚀"].concatIf(isChain, "💦 🔗 Best Ping 🚀");
+    const selectorTags = [`${configNameEmoji} Best Ping 🚀`].concatIf(isChain, `${configNameEmoji} 🔗 Best Ping 🚀`);
 
     protocols.forEach(protocol => {
         let protocolIndex = 1;
@@ -178,15 +178,15 @@ export async function getClWarpConfig(request: Request, env: Env, isPro: boolean
     const outbounds: WireguardOutbound[] = [];
     const proSign = isPro ? "Pro " : "";
     const selectorTags = [
-        `💦 Warp ${proSign}- Best Ping 🚀`,
-        `💦 WoW ${proSign}- Best Ping 🚀`
+        `${configNameEmoji} Warp ${proSign}- Best Ping 🚀`,
+        `${configNameEmoji} WoW ${proSign}- Best Ping 🚀`
     ];
 
     warpEndpoints.forEach((endpoint, index) => {
-        const warpTag = `💦 ${index + 1} - Warp ${proSign}🇮🇷`;
+        const warpTag = `${configNameEmoji} ${index + 1} - Warp ${proSign}🇮🇷`;
         proxyTags.push(warpTag);
 
-        const wowTag = `💦 ${index + 1} - WoW ${proSign}🌍`;
+        const wowTag = `${configNameEmoji} ${index + 1} - WoW ${proSign}🌍`;
         chainTags.push(wowTag);
 
         selectorTags.push(warpTag, wowTag);

@@ -1,3 +1,6 @@
+const CONFIG_NAME_EMOJIS = ['🔥', '🌶', '🪬', '🍕', '🫧', '🍓'] as const;
+export const configNameEmoji = CONFIG_NAME_EMOJIS[Math.floor(Math.random() * CONFIG_NAME_EMOJIS.length)];
+
 export function isDomain(address: string): boolean {
     if (!address) return false;
     const domainRegex = /^(?!-)(?:[A-Za-z0-9-]{1,63}.)+[A-Za-z]{2,}$/;
@@ -79,6 +82,18 @@ export function generateRemark(
         dict: { _VL_, _VL_CAP_, _TR_CAP_ }
     } = globalThis;
 
+    const CONFIG_NAME_EMOJIS = ['🔥', '🌶', '🪬', '🍕', '🫧', '🍓'];
+    
+    // Generate unique emoji for each remark based on cleanIndex
+    const getUniqueEmoji = (index: number): string => {
+        // Use a simple hash-like function to ensure consistent but unique emoji per index
+        const seed = index + Date.now().toString().slice(-4);
+        const emojiIndex = Math.abs(seed.split('').reduce((a, b) => {
+            return ((a << 5) - a + b.charCodeAt(0)) | 0;
+        }, 0)) % CONFIG_NAME_EMOJIS.length;
+        return CONFIG_NAME_EMOJIS[emojiIndex];
+    };
+
     const isCustomAddr = customCdnAddrs.includes(address);
     const configType = isCustomAddr ? ' C' : isFragment ? ' F' : '';
     const chainSign = isChain ? '🔗 ' : '';
@@ -96,7 +111,12 @@ export function generateRemark(
         ? addressType = 'Clean IP'
         : addressType = isDomain(address) ? 'Domain' : isIPv4(address) ? 'IPv4' : isIPv6(address) ? 'IPv6' : '';
 
-    return `💦 ${index} - ${chainSign}${protoSign}${configType} - ${addressType} : ${port}`;
+    // Use unique emoji for each remark if it's a clean IP with custom remark
+    const emoji = (cleanIndex !== -1 && cleanIPRemarks?.[cleanIndex]) 
+        ? getUniqueEmoji(cleanIndex) 
+        : configNameEmoji;
+
+    return `${emoji} ${index} - ${chainSign}${protoSign}${configType} - ${addressType} : ${port}`;
 }
 
 export function randomUpperCase(str: string): string {

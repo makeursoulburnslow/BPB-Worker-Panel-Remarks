@@ -119,12 +119,15 @@
                                 </h4>
                             </summary>
                             <div style="flex-direction: column;">
-                                <button type="button" class="add-noise add-pair" onclick="addCleanProxyRow(true)">
-                                    <span class="material-symbols-rounded">add_circle</span>
-                                    <h4>Add Pair</h4>
-                                </button>
                                 <div id="clean-proxy-rows" class="section">
+                                    <!-- Dynamic rows will be inserted here -->
                                 </div>
+                                <div class="form-control">
+                                    <button type="button" class="button" onclick="addCleanProxyRow()">
+                                        <span class="material-symbols-rounded">add_circle</span> Add Row
+                                    </button>
+                                </div>
+                                <p class="clean-proxy-hint">Each row creates configs by matching every Clean IP line with every Proxy IP line. Remarks become: <strong>Remark 1.1</strong>, <strong>Remark 1.2</strong>, … (cleanRow.proxyRow)</p>
                             </div>
                         </details>
                     </div>

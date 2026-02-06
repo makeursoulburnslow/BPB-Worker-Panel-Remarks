@@ -1,6 +1,6 @@
 import { getGeoAssets } from './geo-assets';
 import { DNS, DnsHosts, FakeDNS } from 'types/clash';
-import { isDomain, getDomain, accDnsRules } from '@utils';
+import { isDomain, getDomain, accDnsRules, configNameEmoji } from '@utils';
 
 export async function buildDNS(isChain: boolean, isWarp: boolean, isPro: boolean): Promise<DNS> {
     const {
@@ -18,8 +18,8 @@ export async function buildDNS(isChain: boolean, isWarp: boolean, isPro: boolean
     const finalLocalDNS = localDNS === 'localhost' ? 'system' : `${localDNS}#DIRECT`;
     const proSign = isPro ? "Pro " : "";
     const remoteDnsDetour = isWarp
-        ? `💦 Warp ${proSign}- Best Ping 🚀`
-        : isChain ? "💦 Best Ping 🚀" : "✅ Selector";
+        ? `${configNameEmoji} Warp ${proSign}- Best Ping 🚀`
+        : isChain ? `${configNameEmoji} Best Ping 🚀` : "✅ Selector";
 
     const finalRemoteDNS = `${isWarp ? warpRemoteDNS : remoteDNS}#${remoteDnsDetour}`;
     const hosts: DnsHosts = {};

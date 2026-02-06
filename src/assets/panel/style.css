@@ -785,6 +785,76 @@ summary h3 {
   cursor: pointer;
 }
 
+.clean-proxy-row {
+  border: 1px solid var(--border-color);
+  border-radius: var(--inner-container-border-radius);
+  padding: var(--inner-container-padding);
+  margin-bottom: var(--inner-container-gap);
+  background-color: var(--form-background-color);
+  box-shadow: var(--container-box-shadow);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  flex-direction: column;
+}
+
+.clean-proxy-row:hover {
+  border-color: var(--secondary-color);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.clean-proxy-row .form-control {
+  margin-bottom: var(--inner-container-gap);
+}
+
+.clean-proxy-row .form-control:last-child {
+  margin-bottom: 0;
+}
+
+.clean-proxy-row .form-control div {
+  gap: 10px;
+}
+
+.clean-proxy-row button {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: var(--element-border-radius);
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  min-width: auto;
+  width: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clean-proxy-row button:hover {
+  background-color: #c82333;
+  transform: translateY(-1px);
+}
+
+.clean-proxy-row button:active {
+  transform: translateY(1px);
+}
+
+.clean-proxy-row button span.material-symbols-rounded {
+  font-size: 18px;
+  margin: 0;
+}
+
+#clean-proxy-rows > .form-control {
+  border: 2px dashed var(--border-color);
+  border-radius: var(--inner-container-border-radius);
+  padding: var(--inner-container-padding);
+  background-color: transparent;
+  box-shadow: none;
+}
+
+#clean-proxy-rows > .form-control:hover {
+  border-color: var(--secondary-color);
+  background-color: var(--form-background-color);
+}
+
 @media only screen and (min-width: 600px) {
   .form-control {
     flex-direction: row;

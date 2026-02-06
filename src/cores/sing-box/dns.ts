@@ -1,6 +1,6 @@
 import { getGeoAssets } from './geo-assets';
 import { DNS, DnsRule, DnsServer } from 'types/sing-box';
-import { isDomain, getDomain, accDnsRules } from '@utils';
+import { isDomain, getDomain, accDnsRules, configNameEmoji } from '@utils';
 
 export async function buildDNS(isWarp: boolean, isChain: boolean): Promise<DNS> {
     const {
@@ -20,7 +20,7 @@ export async function buildDNS(isWarp: boolean, isChain: boolean): Promise<DNS> 
         {
             type: isWarp ? "udp" : protocol,
             server: isWarp ? warpRemoteDNS : remoteDnsHost.host,
-            detour: isWarp ? "💦 Warp - Best Ping 🚀" : isChain ? "💦 Best Ping 🚀" : "✅ Selector",
+            detour: isWarp ? `${configNameEmoji} Warp - Best Ping 🚀` : isChain ? `${configNameEmoji} Best Ping 🚀` : "✅ Selector",
             tag: "dns-remote"
         }
     ];
